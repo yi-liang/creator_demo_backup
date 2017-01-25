@@ -88,9 +88,11 @@ class Wifiboard():
         then turn on the conveyor for <timer> secondes and then turn it off
         """
         print("running ...")
+        clock = self.timer
         for i in range(self.timer):
             sleep(1)
-            print(i + 1, " seconds")
+            print(str(clock) + " seconds")
+            clock -= 1
         self.pin_power.write(PIN_HIGH)
         sleep(0.1)
         self.pin_power.write(PIN_LOW)
