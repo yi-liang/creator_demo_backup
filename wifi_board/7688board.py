@@ -106,10 +106,13 @@ class Wifiboard():
         """
         self.start_awa()
         print("Ready")
+        pin_now = self.pin_button.read()
         while True:
             sleep(0.5)
-            if self.pin_button.read() == PIN_HIGH:
+            pin_next = self.pin_button.read()
+            if (pin_next - pin_now) == PIN_HIGH:  # pin value raised
                 self.power_switch()
+            pin_now = pin_next
 
 if __name__ == "__main__":
 
