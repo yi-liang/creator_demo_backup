@@ -7,8 +7,9 @@ This programme will be running on a 7688 Duo board to:
 
 Hardware setup:
 7688 duo board, conveyor power, button
-two jumper wires from the button should be connected to a 3v3 pin and a Gpio pin(0) on 7688 duo board:
-three jumper wires from the conveyor power should be connected to a GND and a Gpio(16) to control the power,
+The two jumper wires from the button, one of them should be connected to a 3v3 pin, 
+the other one should be connected to a Gpio pin(0) as well as the GND(via a resistor) on 7688 duo board:
+The three jumper wires from the conveyor power should be connected to a GND and a Gpio(16) to control the power,
 and another Gpio(17) to read the status of the power.
 
 To run the programme:
@@ -56,6 +57,7 @@ class Wifiboard():
     def start_awa(self):
         """
         Start awa client and create object/instance Digital Input State
+        (Run awa client tool as process to reduce the the dependencies for the demo)
         """
         self.awaclient.start_client("7688board")
         self.awaclient.create_object("--objectID=3200 --objectName='Digital Input' --resourceID=5500 --resourceName='Digital Input State' --resourceType=boolean --resourceInstances=single --resourceRequired=optional --resourceOperations=r")
