@@ -47,8 +47,8 @@ class Wifiboard():
         self.power_status.dir(mraa.DIR_IN)
 
         # awa client
-        port = 6003
-        ipc_port = 6004
+        port = 0
+        ipc_port = 12346
         self.awaclient = Awaclient(port, ipc_port, identity, secret)
 
         # timer
@@ -59,7 +59,7 @@ class Wifiboard():
         Start awa client and create object/instance Digital Input State
         (Run awa client tool as process to reduce the the dependencies for the demo)
         """
-        self.awaclient.start_client("7688board")
+        self.awaclient.start_client("ConveyorController")
         self.awaclient.create_object("--objectID=3200 --objectName='Digital Input' --resourceID=5500 --resourceName='Digital Input State' --resourceType=boolean --resourceInstances=single --resourceRequired=optional --resourceOperations=r")
         self.awaclient.create_resource("/3200/0")
         self.awaclient.create_resource("/3200/0/5500")
