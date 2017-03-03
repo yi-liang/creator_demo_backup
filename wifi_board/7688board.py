@@ -4,20 +4,17 @@ This programme will be running on a 7688 Duo board to:
 (2) when the button is pressed, switch on or off the conveyor power which is also
     connected to the 7688 board via pins;
 (3) Update the status of awa object(digital output state)
-
 Hardware setup:
 7688 duo board, conveyor power, button
-The two jumper wires from the button, one of them should be connected to a 3v3 pin, 
+The two jumper wires from the button, one of them should be connected to a 3v3 pin,
 the other one should be connected to a Gpio pin(0) as well as the GND(via a resistor) on 7688 duo board:
 The three jumper wires from the conveyor power should be connected to a GND and a Gpio(16) to control the power,
 and another Gpio(17) to read the status of the power.
-
 To run the programme:
 python3 <identity> <secret> <timer>
 <timer> is optional, if run with the timer argument, when the button is pressed,
 the conveyor power will be turned on for <timer> seconds then turn off.
 If run without the timer argument, pressing the button will turn on/off the conveyor power
-
 """
 
 import mraa  # library installed by default on 7688 board
@@ -54,6 +51,8 @@ class Wifiboard():
         # timer
         self.timer = timer
 
+        self.control_state = False
+
     def start_awa(self):
         """
         Start awa client and create object/instance Digital Input State
@@ -63,6 +62,8 @@ class Wifiboard():
         self.awaclient.create_object("--objectID=3200 --objectName='Digital Input' --resourceID=5500 --resourceName='Digital Input State' --resourceType=boolean --resourceInstances=single --resourceRequired=optional --resourceOperations=r")
         self.awaclient.create_resource("/3200/0")
         self.awaclient.create_resource("/3200/0/5500")
+
+
 
     def power_switch(self):
         """
@@ -79,10 +80,21 @@ class Wifiboard():
         # Update the awa resource status
         if self.power_status.read() == PIN_HIGH:
             self.awaclient.set_resource("/3200/0/5500", True)
+            self.control_state = True
             if self.timer != None:
                 self.timer_run()
         elif self.power_status.read() == PIN_LOW:
             self.awaclient.set_resource("/3200/0/5500", False)
+            self.control_state = False
+
+    def recover(self):
+        # was not turned off by button, turn back on
+        if self.power_status.read() == PIN_LOW and self.control_state:
+            self.pin_power.write(PIN_HIGH)
+            sleep(0.1)
+            self.pin_power.write(PIN_LOW)
+            print("recovered")
+
 
     def timer_run(self):
         """
@@ -110,6 +122,7 @@ class Wifiboard():
         print("Ready")
         pin_now = self.pin_button.read()
         while True:
+            self.recover()
             sleep(0.5)
             pin_next = self.pin_button.read()
             if (pin_next - pin_now) == PIN_HIGH:  # pin value raised
@@ -129,4 +142,4 @@ if __name__ == "__main__":
         timer = None
     wifi_board = Wifiboard(identity, secret, timer)
     wifi_board.run()
-
+    
