@@ -17,6 +17,7 @@ the conveyor power will be turned on for <timer> seconds then turn off.
 If run without the timer argument, pressing the button will turn on/off the conveyor power
 """
 
+import atexit
 import mraa  # library installed by default on 7688 board
 from time import sleep
 from awaclient import Awaclient
@@ -53,6 +54,8 @@ class Wifiboard():
 
         self.control_state = False
 
+        atexit.register(self.exitfunc)
+
     def start_awa(self):
         """
         Start awa client and create object/instance Digital Input State
@@ -62,8 +65,6 @@ class Wifiboard():
         self.awaclient.create_object("--objectID=3200 --objectName='Digital Input' --resourceID=5500 --resourceName='Digital Input State' --resourceType=boolean --resourceInstances=single --resourceRequired=optional --resourceOperations=r")
         self.awaclient.create_resource("/3200/0")
         self.awaclient.create_resource("/3200/0/5500")
-
-
 
     def power_switch(self):
         """
@@ -129,8 +130,15 @@ class Wifiboard():
                 self.power_switch()
             pin_now = pin_next
 
-if __name__ == "__main__":
+    def exitfunc(self):
+        # when exits, turn down the power
+        print("exiting ...")
+        if self.power_status.read() == PIN_HIGH:
+            self.pin_power.write(PIN_HIGH)
+            sleep(0.1)
+            self.pin_power.write(PIN_LOW)
 
+if __name__ == "__main__":
     print(argv)
     if len(argv) < 3:
         raise Exception("missing identity/secret, run 'python3 <identity> <secret>'")
@@ -142,4 +150,3 @@ if __name__ == "__main__":
         timer = None
     wifi_board = Wifiboard(identity, secret, timer)
     wifi_board.run()
-    
