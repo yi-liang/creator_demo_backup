@@ -44,6 +44,15 @@ class Wifiboard():
         self.power_status = mraa.Gpio(17)
         self.power_status.dir(mraa.DIR_IN)
 
+        # pin to control the 2nd conveyor power
+        self.pin_power2 = mraa.Gpio(14)
+        self.pin_power2.dir(mraa.DIR_OUT)
+        self.pin_power2.write(0)
+
+        # pin to read the 2nd conveyor power status
+        self.power_status2 = mraa.Gpio(15)
+        self.power_status2.dir(mraa.DIR_IN)
+
         # awa client
         port = 0
         ipc_port = 12346
@@ -78,6 +87,12 @@ class Wifiboard():
         print("power switch")
         print("status ", self.power_status.read())
 
+        self.pin_power2.write(PIN_HIGH)
+        sleep(0.1)
+        self.pin_power2.write(PIN_LOW)
+        print("power2 switch")
+        print("status ", self.power_status2.read())
+
         # Update the awa resource status
         if self.power_status.read() == PIN_HIGH:
             self.awaclient.set_resource("/3200/0/5500", True)
@@ -94,7 +109,12 @@ class Wifiboard():
             self.pin_power.write(PIN_HIGH)
             sleep(0.1)
             self.pin_power.write(PIN_LOW)
-            print("recovered")
+            print("1 recovered")
+        if self.power_status2.read() == PIN_LOW and self.control_state:
+            self.pin_power2.write(PIN_HIGH)
+            sleep(0.1)
+            self.pin_power2.write(PIN_LOW)
+            print("2 recovered")
 
 
     def timer_run(self):
@@ -111,6 +131,11 @@ class Wifiboard():
         self.pin_power.write(PIN_HIGH)
         sleep(0.1)
         self.pin_power.write(PIN_LOW)
+
+        self.pin_power2.write(PIN_HIGH)
+        sleep(0.1)
+        self.pin_power2.write(PIN_LOW)
+
         print("power switch off")
         self.awaclient.set_resource("/3200/0/5500", False)
 
@@ -137,6 +162,10 @@ class Wifiboard():
             self.pin_power.write(PIN_HIGH)
             sleep(0.1)
             self.pin_power.write(PIN_LOW)
+        if self.power_status2.read() == PIN_HIGH:
+            self.pin_power2.write(PIN_HIGH)
+            sleep(0.1)
+            self.pin_power2.write(PIN_LOW)
 
 if __name__ == "__main__":
     print(argv)
