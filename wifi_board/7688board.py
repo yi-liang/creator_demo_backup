@@ -29,7 +29,7 @@ PIN_LOW = 0
 
 class Wifiboard():
 
-    def __init__(self, identity, secret, timer=None):
+    def __init__(self, identity, secret, timer=330):
 
         # pin to read the button control
         self.pin_button = mraa.Gpio(0)
@@ -59,9 +59,14 @@ class Wifiboard():
         self.awaclient = Awaclient(port, ipc_port, identity, secret)
 
         # timer
-        self.timer = timer
+        #self.timer = timer
+        self.timer = None
 
         self.control_state = False
+
+        self.ontimer = 0
+        self.offtimer = 0
+        self.control_timeout = timer
 
         atexit.register(self.exitfunc)
 
@@ -95,13 +100,28 @@ class Wifiboard():
 
         # Update the awa resource status
         if self.power_status.read() == PIN_HIGH:
-            self.awaclient.set_resource("/3200/0/5500", True)
+            try:
+                self.awaclient.set_resource("/3200/0/5500", True)
+            except:
+                pass
             self.control_state = True
+
+            self.offtimer = 0
+            self.ontimer = 1
+
             if self.timer != None:
                 self.timer_run()
+
         elif self.power_status.read() == PIN_LOW:
-            self.awaclient.set_resource("/3200/0/5500", False)
+            try:
+                self.awaclient.set_resource("/3200/0/5500", False)
+            except:
+                pass
             self.control_state = False
+
+            self.offtimer = 1
+            self.ontimer = 0
+
 
     def recover(self):
         # was not turned off by button, turn back on
@@ -144,7 +164,10 @@ class Wifiboard():
         starting point
         starts the awa and waits for the button control
         """
-        self.start_awa()
+        try:
+            self.start_awa()
+        except:
+            pass
         print("Ready")
         pin_now = self.pin_button.read()
         while True:
@@ -154,6 +177,15 @@ class Wifiboard():
             if (pin_next - pin_now) == PIN_HIGH:  # pin value raised
                 self.power_switch()
             pin_now = pin_next
+
+            if self.offtimer > 0:
+                self.offtimer += 0.5
+                if self.offtimer > self.control_timeout:
+                    self.power_switch()
+            elif self.ontimer > 0:
+                self.ontimer += 0.5
+                if self.ontimer > self.control_timeout:
+                    self.power_switch()
 
     def exitfunc(self):
         # when exits, turn down the power
@@ -176,6 +208,6 @@ if __name__ == "__main__":
     try:
         timer = int(argv[3])
     except:
-        timer = None
+        timer = 330
     wifi_board = Wifiboard(identity, secret, timer)
     wifi_board.run()
